@@ -1,0 +1,40 @@
+services:
+
+  db:
+    image: postgres:15
+    container_name: triage_db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
+
+
+  importer:
+    build:
+      context: .
+      dockerfile: importer/Dockerfile
+    container_name: triage_importer
+    depends_on:
+      - db
+    env_file:
+      - .env
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: triage_api
+    depends_on:
+      - db
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:

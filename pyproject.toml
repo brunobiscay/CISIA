@@ -1,0 +1,80 @@
+[project]
+name = "CERTIFICATION_CISIA"
+version = "0.1.0"
+description = "CERTIFICATION_CISIA, Diagnostic assisté et tri d'urgence multimodal en télémédecine"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+
+dependencies = [
+    # =========================
+    # API & Backend
+    # =========================
+    "fastapi>=0.136.1",
+    "uvicorn>=0.30.0",
+    "pydantic>=2.13.4",
+    # =========================
+    # Logging & Monitoring
+    # =========================
+    "loguru>=0.7.3",
+    "prometheus-client>=0.25.0",
+    "prometheus-fastapi-instrumentator>=8.0.0",
+    # =========================
+    # Frontend
+    # =========================
+    "streamlit>=1.57.0",
+    "streamlit-drawable-canvas>=0.9.3",
+    "requests>=2.34.2",
+    "pillow>=10.3.0",
+    # =========================
+    # Data & ML
+    # =========================
+    "numpy>=1.26.4",
+    "pandas>=2.2.2",
+    "scikit-learn>=1.5.0",
+    "lightgbm>=4.6.0",
+    "pyarrow>=24.0.0",
+    "matplotlib>=3.10.9",
+    # =========================
+    # Deep Learning
+    # =========================
+    "tensorflow>=2.16.0",
+    # =========================
+    # MLflow
+    # =========================
+    "mlflow>=2.13.0",
+    # =========================
+    # Utils images
+    # =========================
+    "opencv-python>=4.10.0.84",
+    "transformers>=5.10.2",
+    "torch>=2.12.0",
+    "sqlalchemy>=2.0.50",
+    "python-dotenv>=1.2.2",
+    "psycopg2-binary>=2.9.12",
+    "base>=0.0.0",
+    "optuna>=4.9.0",
+    "mord>=0.7",
+]
+
+# =========================
+# DEV DEPENDENCIES
+# =========================
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.0",
+    "httpx>=0.27.0"
+]
+
+# =========================
+# PYTEST CONFIG
+# =========================
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["."]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.17",
+]
