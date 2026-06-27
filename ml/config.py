@@ -1,7 +1,20 @@
 import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from common.schema import (  # noqa: E402, F401 (réexportés pour ml/preprocessing.py, ml/extract_dataset.py, ...)
+    CATEGORICAL_FEATURES,
+    CLASS_LABELS,
+    EMBEDDING_DIM,
+    EMBEDDING_FEATURES,
+    EMBEDDING_PREFIX,
+    NUMERIC_FEATURES,
+    TARGET,
+)
 
 load_dotenv()
 
@@ -17,27 +30,7 @@ ML_DATABASE_URL = os.getenv("ML_DATABASE_URL")
 # ==========================
 # COLONNES
 # ==========================
-TARGET = "niveau_urgence"
 ID_COLUMNS = ["id_observation"]
-
-NUMERIC_FEATURES = [
-    "freq_cardiaque",
-    "tension_sys",
-    "temp",
-    "sat_oxygene",
-    "duree_symptomes",
-]
-
-CATEGORICAL_FEATURES = [
-    "sexe",
-    "tranche_age",
-    "source",
-    "antecedents",
-]
-
-EMBEDDING_DIM = 768
-EMBEDDING_PREFIX = "emb_"
-EMBEDDING_FEATURES = [f"{EMBEDDING_PREFIX}{i}" for i in range(EMBEDDING_DIM)]
 
 # ==========================
 # FEATURE SETS
@@ -70,8 +63,9 @@ NEURAL_NET_SEEDS = [42, 43, 44]
 # ==========================
 # MLFLOW
 # ==========================
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
 MLFLOW_EXPERIMENT_NAME = "triage_urgence_classification"
-CLASS_LABELS = [0, 1, 2]
+MLFLOW_MODEL_NAME = "triage_urgence_model"
 
 # ==========================
 # OPTUNA (tuning des meilleurs candidats)
@@ -82,4 +76,20 @@ OPTUNA_N_TRIALS = {
     "RandomForestClassifier": 30,
     "LGBMClassifier": 30,
     NEURAL_NET_MODEL: 15,
+}
+
+# ==========================
+# MODELE DE PRODUCTION (combo retenu pour le serving + réentraînement)
+# ==========================
+PRODUCTION_FEATURE_SET = f"RF_IMPORTANCE_{RF_IMPORTANCE_K}"
+PRODUCTION_MODEL_NAME = "LGBMClassifier"
+# Meilleurs hyperparams trouvés par Optuna pour RF_IMPORTANCE_20__LGBMClassifier__tuned
+PRODUCTION_MODEL_PARAMS = {
+    "n_estimators": 450,
+    "learning_rate": 0.0056828375585122656,
+    "num_leaves": 19,
+    "max_depth": 10,
+    "min_child_samples": 47,
+    "reg_alpha": 0.003077180271250686,
+    "reg_lambda": 0.09565499215943825,
 }

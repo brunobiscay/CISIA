@@ -1,3 +1,4 @@
+import argparse
 import sys
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from ml.config import (  # noqa: E402
     DATASET_PATH,
     ID_COLUMNS,
     MLFLOW_EXPERIMENT_NAME,
+    MLFLOW_TRACKING_URI,
     NEURAL_NET_MODEL,
     OPTUNA_N_TRIALS,
     RANDOM_STATE,
@@ -117,6 +119,11 @@ def run_study(objective, n_trials, label):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--models", nargs="+", default=None, help="Filtrer les modèles à tuner")
+    args = parser.parse_args()
+    models_to_run = args.models or TUNE_MODELS
+
     logger.info(f"Chargement de {DATASET_PATH}...")
     df = pd.read_parquet(DATASET_PATH)
 
@@ -141,11 +148,12 @@ def main():
     logger.info(f"[{TUNE_FEATURE_SET}] {n_features} features après sélection")
 
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 
     tuned_rows = []
 
-    for model_name in TUNE_MODELS:
+    for model_name in models_to_run:
         run_name = f"{TUNE_FEATURE_SET}__{model_name}__tuned"
         logger.info(f"=== {run_name} ===")
 
@@ -220,7 +228,7 @@ def main():
     summary_path = ARTIFACTS_DIR / "summary.csv"
     baseline = pd.read_csv(summary_path)
     baseline_subset = baseline[
-        (baseline["feature_set"] == TUNE_FEATURE_SET) & (baseline["model"].isin(TUNE_MODELS))
+        (baseline["feature_set"] == TUNE_FEATURE_SET) & (baseline["model"].isin(models_to_run))
     ].copy()
 
     comparison = pd.concat([baseline_subset, pd.DataFrame(tuned_rows)], ignore_index=True)

@@ -20,6 +20,7 @@ from ml.config import (  # noqa: E402
     FEATURE_SETS,
     ID_COLUMNS,
     MLFLOW_EXPERIMENT_NAME,
+    MLFLOW_TRACKING_URI,
     MODELS,
     NEURAL_NET_SEEDS,
     RANDOM_STATE,
@@ -221,6 +222,7 @@ def main():
     logger.info(f"Train : {len(X_train)} lignes - Test : {len(X_test)} lignes")
 
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 
     feature_sets_to_run = args.feature_sets or FEATURE_SETS

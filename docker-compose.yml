@@ -24,6 +24,22 @@ services:
     env_file:
       - .env
 
+  mlflow:
+    build:
+      context: .
+      dockerfile: mlflow/Dockerfile
+    container_name: triage_mlflow
+    restart: always
+    depends_on:
+      - db
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      MLFLOW_ARTIFACT_ROOT: /mlflow/artifacts
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_artifacts:/mlflow/artifacts
+
   api:
     build:
       context: .
@@ -31,10 +47,60 @@ services:
     container_name: triage_api
     depends_on:
       - db
+      - mlflow
     env_file:
       - .env
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
     ports:
       - "8000:8000"
 
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: triage_frontend
+    restart: always
+    depends_on:
+      - api
+    environment:
+      API_URL: http://api:8000
+      API_KEY: ${API_KEY}
+    ports:
+      - "8501:8501"
+
+  prefect-server:
+    build:
+      context: .
+      dockerfile: orchestration/Dockerfile
+    container_name: triage_prefect_server
+    restart: always
+    command: prefect server start --host 0.0.0.0
+    ports:
+      - "4200:4200"
+    volumes:
+      - prefect_data:/root/.prefect
+
+  prefect-worker:
+    build:
+      context: .
+      dockerfile: orchestration/Dockerfile
+    container_name: triage_prefect_worker
+    restart: always
+    depends_on:
+      - prefect-server
+      - db
+      - mlflow
+    env_file:
+      - .env
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      ML_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    volumes:
+      - ./data:/app/data
+
 volumes:
   postgres_data:
+  mlflow_artifacts:
+  prefect_data:
