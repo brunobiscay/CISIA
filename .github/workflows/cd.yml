@@ -26,14 +26,38 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push ${{ matrix.service }}
+      - name: Build ${{ matrix.service }} (load locally)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ matrix.service }}/Dockerfile
-          push: true
+          push: false
+          load: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/triage-${{ matrix.service }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/triage-${{ matrix.service }}:${{ github.sha }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+      # docker buildx's built-in registry exporter (push: true above) fails with a 400
+      # from DockerHub on the very large ML-dependency layers (3-4GB, torch/transformers/
+      # tensorflow). The classic `docker push` (daemon push path) handles these large
+      # blobs reliably, so we build+load locally then push as a separate step, with retries
+      # since DockerHub occasionally still drops the connection mid-upload for huge layers.
+      - name: Push ${{ matrix.service }} images
+        run: |
+          for tag in latest ${{ github.sha }}; do
+            success=false
+            for attempt in 1 2 3; do
+              if docker push "${{ secrets.DOCKERHUB_USERNAME }}/triage-${{ matrix.service }}:$tag"; then
+                success=true
+                break
+              fi
+              echo "Push attempt $attempt failed for tag $tag, retrying..."
+              sleep 10
+            done
+            if [ "$success" != "true" ]; then
+              echo "All push attempts failed for tag $tag"
+              exit 1
+            fi
+          done
