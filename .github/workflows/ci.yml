@@ -31,6 +31,7 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         service: [backend, frontend, mlflow, orchestration, importer]
     steps:
