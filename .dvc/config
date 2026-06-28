@@ -1,0 +1,6 @@
+[core]
+    analytics = false
+    remote = storage
+    no_scm = true
+['remote "storage"']
+    url = ../dvc-storage

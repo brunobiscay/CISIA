@@ -99,6 +99,8 @@ services:
       ML_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     volumes:
       - ./data:/app/data
+      - ./.dvc:/app/.dvc
+      - ./dvc-storage:/app/dvc-storage
 
 volumes:
   postgres_data:

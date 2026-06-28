@@ -4,8 +4,11 @@
 *.docx
 *.csv
 *.parquet
+~$*
+*.tmp
 mlruns/
 data/artifacts/
+dvc-storage/
 
 # Python-generated files
 __pycache__/

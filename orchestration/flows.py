@@ -1,3 +1,4 @@
+import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -13,6 +14,7 @@ from sklearn.model_selection import train_test_split
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from ml.config import (  # noqa: E402
+    BASE_DIR,
     DATASET_PATH,
     ID_COLUMNS,
     MLFLOW_EXPERIMENT_NAME,
@@ -75,6 +77,11 @@ def build_new_dataset_task() -> pd.DataFrame | None:
     logger.success(
         f"Nouveau dataset : {len(combined)} lignes ({len(new_df)} nouvelles) -> {snapshot_path}"
     )
+
+    subprocess.run(["dvc", "add", str(DATASET_PATH)], check=True, cwd=BASE_DIR)
+    subprocess.run(["dvc", "push"], check=True, cwd=BASE_DIR)
+    logger.success(f"{DATASET_PATH.name} versionné avec DVC et poussé vers le remote.")
+
     return combined
 
 
