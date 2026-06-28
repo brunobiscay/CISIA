@@ -1,4 +1,6 @@
-from sqlalchemy import JSON, Boolean, Column, Float, ForeignKey, Integer, String
+from datetime import datetime
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -98,3 +100,58 @@ class Decision(Base):
     niveau_urgence = Column(Integer)
 
     observation = relationship("Observation", back_populates="decision")
+
+
+# ==========================
+# PREDICTION_LOG (inférences API + feedback différé)
+# ==========================
+class PredictionLog(Base):
+    __tablename__ = "prediction_log"
+
+    id_prediction = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Features brutes envoyées à /predict (mêmes colonnes que ml/config.py)
+    sexe = Column(String(1))
+    tranche_age = Column(String(10))
+    source = Column(String(10))
+    duree_symptomes = Column(Float)
+    freq_cardiaque = Column(Integer)
+    tension_sys = Column(Integer)
+    temp = Column(Float)
+    sat_oxygene = Column(Integer)
+    antecedents = Column(Boolean)
+    description_texte = Column(String)
+
+    # Résultat de la prédiction
+    predicted_niveau_urgence = Column(Integer)
+    proba_0 = Column(Float)
+    proba_1 = Column(Float)
+    proba_2 = Column(Float)
+    model_version = Column(String(50))
+
+    # Feedback différé (vraie décision médicale, renseignée plus tard via PATCH /predict/{id}/feedback)
+    actual_niveau_urgence = Column(Integer, nullable=True)
+
+    # Passe à True une fois la ligne intégrée dans un dataset de réentraînement (évite les doublons)
+    incorporated_in_training = Column(Boolean, default=False, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ==========================
+# DRIFT_METRICS (monitoring data/concept drift)
+# ==========================
+class DriftMetric(Base):
+    __tablename__ = "drift_metrics"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    computed_at = Column(DateTime, default=datetime.utcnow)
+
+    n_samples = Column(Integer)
+    drift_share = Column(Float)  # fraction de features avec drift détecté
+    per_feature_drift = Column(JSON)  # {feature: p_value}
+
+    performance_metrics = Column(JSON, nullable=True)  # f1_macro/critical_undertriage_rate si labels dispo
+    n_labeled_samples = Column(Integer, nullable=True)
+
+    alert_triggered = Column(Boolean, default=False)

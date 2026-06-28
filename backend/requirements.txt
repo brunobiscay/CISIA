@@ -1,5 +1,14 @@
 fastapi
 uvicorn
+pydantic
 sqlalchemy
 psycopg2-binary
 python-dotenv
+loguru
+mlflow==3.13.0
+scikit-learn
+lightgbm
+pandas
+numpy
+torch
+transformers

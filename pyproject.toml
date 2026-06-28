@@ -54,6 +54,8 @@ dependencies = [
     "base>=0.0.0",
     "optuna>=4.9.0",
     "mord>=0.7",
+    "evidently>=0.7.21",
+    "prefect>=3.7.5",
 ]
 
 # =========================

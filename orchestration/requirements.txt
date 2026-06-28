@@ -1,0 +1,16 @@
+prefect
+pandas
+numpy
+scikit-learn
+lightgbm
+pyarrow
+mlflow==3.13.0
+evidently
+sqlalchemy
+psycopg2-binary
+python-dotenv
+loguru
+torch
+transformers
+tensorflow
+mord

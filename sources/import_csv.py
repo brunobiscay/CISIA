@@ -2,19 +2,17 @@ import hashlib
 import hmac
 import math
 import os
-import re
 import sys
 from pathlib import Path
 
 import pandas as pd
-import torch
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from transformers import AutoModel, AutoTokenizer
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from common.embeddings import clean_text, compute_embedding, load_model  # noqa: E402
 from common.models import (  # noqa: E402
     Antecedent,
     Base,
@@ -43,16 +41,11 @@ if DATABASE_URL is None:
 
 BATCH_SIZE = 200
 
-MODEL_NAME = "almanach/camembert-bio-base"  # modèle FR médical
-
 
 # ==========================
 # LOAD MODEL
 # ==========================
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModel.from_pretrained(MODEL_NAME)
-
-model.eval()
+load_model()
 
 
 # ==========================
@@ -84,33 +77,6 @@ def age_to_tranche(age):
         return "40-65"
     else:
         return "65+"
-
-
-def clean_text(text):
-    if pd.isna(text):
-        return "aucun symptome"
-
-    text = str(text)
-    text = re.sub(r"\d+", "", text)
-
-    return text.strip()
-
-
-# ==========================
-# CAMEMBERT EMBEDDING
-# ==========================
-def get_embedding(text):
-    inputs = tokenizer(
-        text, return_tensors="pt", truncation=True, padding=True, max_length=128
-    )
-
-    with torch.no_grad():
-        outputs = model(**inputs)
-
-    # mean pooling
-    embedding = outputs.last_hidden_state.mean(dim=1).squeeze()
-
-    return embedding.tolist()
 
 
 def safe_int(value):
@@ -199,7 +165,7 @@ def import_csv():
 
         # ===== EMBEDDING CAMEMBERT =====
         cleaned_text = clean_text(row["description_symptomes"])
-        embedding = get_embedding(cleaned_text)
+        embedding = compute_embedding(cleaned_text)
 
         session.add(Symptome(id_observation=obs_id, description_embedding=embedding))
 
